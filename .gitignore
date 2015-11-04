@@ -1,0 +1,5 @@
+*.swp
+*.pyc
+build
+node_modules
+bower_components
