@@ -120,5 +120,9 @@ gulp.task("serve", function () {
         port = process.env.CLIQUE_PORT || 3000;
 
     return gulp.src("")
-        .pipe(shell(["./clique-anb " + host + " " + port]));
+        .pipe(shell(["tangelo",
+                     "--host", host,
+                     "--port", port,
+                     "--root", "build/site",
+                     "--config", "tangelo-config.yaml"].join(" ")));
 });
