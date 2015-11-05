@@ -12,7 +12,8 @@ $(function () {
             view,
             info,
             linkInfo,
-            colormap;
+            colormap,
+            linkColormap;
 
         cfg = _cfg;
 
@@ -76,6 +77,13 @@ $(function () {
         });
 
         colormap = d3.scale.category10();
+
+        // This is a 3-color categorical colormap from colorbrewer
+        // (http://colorbrewer2.org/?type=qualitative&scheme=Dark2&n=3) to
+        // encode interaction types: mention, reply, and retweet.
+        linkColormap = d3.scale.ordinal();
+        linkColormap.range(["#1b9e77","#d95f02","#7570b3"]);
+
         window.view = view = new clique.view.Cola({
             model: graph,
             el: "#content",
@@ -89,9 +97,12 @@ $(function () {
                 return d.data && d.data.grouped ? 2*r : r;
             },
             postLinkAdd: function (s) {
-                s.style("stroke-dasharray", function (d) {
-                    return d.data && d.data.grouping ? "5,5" : "none";
-                });
+                var cmap = function (d) {
+                    return linkColormap(d.data.interaction);
+                };
+
+                s.style("fill", cmap)
+                    .style("stroke", cmap);
             },
             transitionTime: 500,
             focusColor: "pink",
