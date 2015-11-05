@@ -37,12 +37,7 @@ body
             .row
                 .col-md-12
                     .row
-                        .col-md-12 #[input.form-control(placeholder="File")#filename]
-                    .row
-                        .col-md-12 #[input.form-control(placeholder="Label")#label]
-                    .row
-                        .col-md-12.col-md-offset-1
-                            label #[input(type="checkbox")#delsearch] Include deleted nodes
+                        .col-md-12 #[input.form-control(placeholder="ID")#userid]
                     .row
                         .col-md-1
                             a.btn.btn-default#submit Query
@@ -61,8 +56,6 @@ body
             .row
                 .col-md-12
                     label #[input(type="checkbox")#textmode] Display text labels
-                .col-md-12.nodecentrality
-                    button(type="button").btn.btn-primary.btn-xs.nodecentrality Node Centrality #[span.glyphicon.glyphicon-screenshot]
 
     #contextmenu.dropdown.clearfix(style="position: absolute; display: none")
         ul.dropdown-menu(role="menu" ara-labelledby="dropdownMenu" style="display: block; position: static; margin-bottom: 5px")
