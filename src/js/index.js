@@ -79,10 +79,10 @@ $(function () {
         colormap = d3.scale.category10();
 
         // This is a 3-color categorical colormap from colorbrewer
-        // (http://colorbrewer2.org/?type=qualitative&scheme=Dark2&n=3) to
+        // (http://colorbrewer2.org/?type=qualitative&scheme=Paired&n=3) to
         // encode interaction types: mention, reply, and retweet.
         linkColormap = d3.scale.ordinal();
-        linkColormap.range(["#1b9e77","#d95f02","#7570b3"]);
+        linkColormap.range(['#a6cee3','#1f78b4','#b2df8a']);
 
         window.view = view = new clique.view.Cola({
             model: graph,
