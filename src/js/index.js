@@ -82,7 +82,7 @@ $(function () {
         // (http://colorbrewer2.org/?type=qualitative&scheme=Paired&n=3) to
         // encode interaction types: mention, reply, and retweet.
         linkColormap = d3.scale.ordinal();
-        linkColormap.range(['#a6cee3','#1f78b4','#b2df8a']);
+        linkColormap.range(["#a6cee3","#1f78b4","#b2df8a"]);
 
         window.view = view = new clique.view.Cola({
             model: graph,
