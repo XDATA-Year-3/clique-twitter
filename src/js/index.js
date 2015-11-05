@@ -91,7 +91,10 @@ $(function () {
                 return d.data.usernames[0];
             },
             fill: function (d) {
-                return colormap((d.data || {}).type || "no type");
+                // Red for inactive users (e.g., mentioned by others only),
+                // purple for active users with non-geolocated tweets, and blue
+                // for active users with geolocated tweets.
+                return !d.data.active ? "#ca0020" : (d.data.geolocated ? "#0571b0" : "#7b3294");
             },
             nodeRadius: function (d, r) {
                 return d.data && d.data.grouped ? 2*r : r;
