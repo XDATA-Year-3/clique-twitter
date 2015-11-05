@@ -91,7 +91,10 @@ $(function () {
                 return d.data.usernames[0];
             },
             fill: function (d) {
-                return colormap((d.data || {}).type || "no type");
+                // Red for inactive users (e.g., mentioned by others only),
+                // purple for active users with non-geolocated tweets, and blue
+                // for active users with geolocated tweets.
+                return !d.data.active ? "#ca0020" : (d.data.geolocated ? "#0571b0" : "#7b3294");
             },
             nodeRadius: function (d, r) {
                 return d.data && d.data.grouped ? 2*r : r;
@@ -148,8 +151,7 @@ $(function () {
                     left = getMenuPosition(d3.event.clientX, "width", "scrollLeft");
                     top = getMenuPosition(d3.event.clientY, "height", "scrollTop");
 
-                    cm.select("ul")
-                        .select("li.nodelabel")
+                    ul.select("li.nodelabel")
                         .text(function () {
                             var label = d.data.usernames[0];
 
@@ -158,6 +160,17 @@ $(function () {
                             }
 
                             return label;
+                        });
+
+                    ul.select("li.activity")
+                        .text(function () {
+                            if (!d.data.active) {
+                                return "(This user has sent no messages and was only mentioned by someone else.)";
+                            } else if (d.data.geolocated) {
+                                return "(This user has sent at least one geolocated message.)";
+                            } else {
+                                return "(This user has sent only sent non-geolocated messages.)";
+                            }
                         });
 
                     ul.select("a.context-hide")
