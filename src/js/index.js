@@ -171,11 +171,10 @@ $(function () {
 
                     if (cfg.intentService) {
                         def = $.getJSON(cfg.intentService, {
-                            user: d.data.label
+                            username: d.data.usernames[0]
                         });
                     } else {
-                        def = $.Deferred();
-                        def.resolve({});
+                        def = $.when({});
                     }
 
                     def.then(function (apps) {
@@ -187,10 +186,14 @@ $(function () {
                             .selectAll("li.external")
                             .remove();
 
+                        cm.select("ul")
+                            .selectAll("li.external-header")
+                            .remove();
+
                         if (_.size(apps) > 0) {
                             cm.select("ul")
                                 .append("li")
-                                .classed("external", true)
+                                .classed("external-header", true)
                                 .classed("dropdown-header", true)
                                 .text("External Applications");
 
@@ -202,13 +205,14 @@ $(function () {
                                 .classed("external", true)
                                 .append("a")
                                 .attr("tabindex", -1)
-                                .attr("href", "#")
+                                .attr("href", function (d) {
+                                    return d.username;
+                                })
+                                .attr("target", "_blank")
                                 .text(function (d) {
                                     return d.name;
                                 })
-                                .on("click", function (d) {
-                                    window.open(d.user, "_blank");
-
+                                .on("click", function () {
                                     $cm.hide();
                                 });
                         }
