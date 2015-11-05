@@ -151,8 +151,7 @@ $(function () {
                     left = getMenuPosition(d3.event.clientX, "width", "scrollLeft");
                     top = getMenuPosition(d3.event.clientY, "height", "scrollTop");
 
-                    cm.select("ul")
-                        .select("li.nodelabel")
+                    ul.select("li.nodelabel")
                         .text(function () {
                             var label = d.data.usernames[0];
 
@@ -161,6 +160,17 @@ $(function () {
                             }
 
                             return label;
+                        });
+
+                    ul.select("li.activity")
+                        .text(function () {
+                            if (!d.data.active) {
+                                return "(This user has sent no messages and was only mentioned by someone else.)";
+                            } else if (d.data.geolocated) {
+                                return "(This user has sent at least one geolocated message.)";
+                            } else {
+                                return "(This user has sent only sent non-geolocated messages.)";
+                            }
                         });
 
                     ul.select("a.context-hide")
