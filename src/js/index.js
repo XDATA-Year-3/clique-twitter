@@ -30,7 +30,7 @@ $(function () {
         });
 
         window.listSearch = listSearch = function (field, value) {
-            $.getJSON("assets/listsearch", _.extend({}, mongoStore, {
+            return $.getJSON("assets/listsearch", _.extend({}, mongoStore, {
                 field: field,
                 value: value
             })).then(function (results) {
@@ -86,9 +86,17 @@ $(function () {
             };
 
             graph.adapter.findNode(spec).then(function (center) {
-                if (center) {
-                    graph.addNode(center);
+                var next;
+
+                if (_.isUndefined(center)) {
+                    next = listSearch("usernames", userid);
+                } else {
+                    next = $.when([center]);
                 }
+
+                return next;
+            }).then(function (results) {
+                graph.addNodes(results);
             });
         });
 
