@@ -302,6 +302,44 @@ $(function () {
         });
         linkInfo.render();
 
+        var fixup = _.debounce(_.partial(_.delay, function () {
+            d3.select(linkInfo.el).selectAll("td")
+                .each(function () {
+                    var me = d3.select(this),
+                        text = me.html();
+
+                    if (!me.classed("text-right") && text.startsWith("http")) {
+                        me.html("")
+                            .style("max-width", "0px")
+                            .style("word-wrap", "break-word")
+                            .append("a")
+                            .attr("href", text)
+                            .attr("target", "_blank")
+                            .text(text);
+                    } else if (me.classed("text-right") && text === "<strong>msg</strong>") {
+                        var html = [];
+
+                        me = d3.select($(this).next().get(0));
+                        text = me.html();
+
+                        _.each(text.split(" "), function (tok) {
+                            if (_.size(tok) > 2 && tok[0] === "@") {
+                                html.push("<a href=\"https://twitter.com/" + tok.slice(1) + "\" target=\"_blank\">" + tok + "</a>");
+                            } else if (tok.startsWith("http")) {
+                                html.push("<a href=\"" + tok + "\" target=\"_blank\">" + tok + "</a>");
+                            } else {
+                                html.push(tok);
+                            }
+                        });
+
+                        me.html(html.join(" "));
+                    }
+                });
+        }, 100), 100);
+
+        linkInfo.model.on("change", fixup);
+        linkInfo.graph.on("change", fixup);
+
         if (cfg.titan && cfg.graphCentrality) {
             $("button.nodecentrality").on("click", function () {
                 var rexster = window.location.origin + ["", "plugin", "mongo", "rexster", "graphs", cfg.database + "," + cfg.collection].join("/");
