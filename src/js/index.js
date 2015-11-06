@@ -302,6 +302,30 @@ $(function () {
         });
         linkInfo.render();
 
+        var fixup = _.debounce(_.partial(_.delay, function () {
+            var s;
+
+            s = d3.select(linkInfo.el)
+                .selectAll("td:not(.text-right)")
+                .each(function () {
+                    var me = d3.select(this),
+                        text = me.html();
+
+                    if (text.startsWith("http")) {
+                        me.html("")
+                            .style("max-width", "0px")
+                            .style("word-wrap", "break-word")
+                            .append("a")
+                            .attr("href", text)
+                            .attr("target", "_blank")
+                            .text(text);
+                    }
+                });
+        }, 100), 100);
+
+        linkInfo.model.on("change", fixup);
+        linkInfo.graph.on("change", fixup);
+
         if (cfg.titan && cfg.graphCentrality) {
             $("button.nodecentrality").on("click", function () {
                 var rexster = window.location.origin + ["", "plugin", "mongo", "rexster", "graphs", cfg.database + "," + cfg.collection].join("/");
