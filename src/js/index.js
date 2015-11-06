@@ -8,7 +8,9 @@ $(function () {
         launch;
 
     launch = function (_cfg) {
-        var graph,
+        var mongoStore,
+            graph,
+            listSearch,
             view,
             info,
             linkInfo,
@@ -17,13 +19,27 @@ $(function () {
 
         cfg = _cfg;
 
+        mongoStore = {
+            host: cfg.host || "localhost",
+            database: cfg.database,
+            collection: cfg.collection
+        };
+
         window.graph = graph = new clique.Graph({
-            adapter: new tangelo.plugin.mongo.Mongo({
-                host: cfg.host || "localhost",
-                database: cfg.database,
-                collection: cfg.collection
-            })
+            adapter: new tangelo.plugin.mongo.Mongo(mongoStore)
         });
+
+        window.listSearch = listSearch = function (field, value) {
+            return $.getJSON("assets/listsearch", _.extend({}, mongoStore, {
+                field: field,
+                value: value
+            })).then(function (results) {
+                var oids = _.pluck(_.pluck(results, "_id"), "$oid");
+                return $.when.apply($, _.map(oids, graph.adapter.findNodeByKey, graph.adapter));
+            }).then(function () {
+                return _.toArray(arguments);
+            });
+        };
 
         (function () {
             var request = null,
@@ -70,9 +86,17 @@ $(function () {
             };
 
             graph.adapter.findNode(spec).then(function (center) {
-                if (center) {
-                    graph.addNode(center);
+                var next;
+
+                if (_.isUndefined(center)) {
+                    next = listSearch("usernames", userid);
+                } else {
+                    next = $.when([center]);
                 }
+
+                return next;
+            }).then(function (results) {
+                graph.addNodes(results);
             });
         });
 
@@ -373,6 +397,12 @@ $(function () {
                     graph.addNode(node);
                 }
             });
+        }
+
+        // Do the same for a username in the query arguments.
+        if (_.has(args, "username")) {
+            listSearch("usernames", args.username)
+                .then(_.bind(graph.addNodes, graph));
         }
     };
 
