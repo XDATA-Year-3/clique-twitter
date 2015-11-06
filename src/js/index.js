@@ -8,7 +8,9 @@ $(function () {
         launch;
 
     launch = function (_cfg) {
-        var graph,
+        var mongoStore,
+            graph,
+            listSearch,
             view,
             info,
             linkInfo,
@@ -17,13 +19,27 @@ $(function () {
 
         cfg = _cfg;
 
+        mongoStore = {
+            host: cfg.host || "localhost",
+            database: cfg.database,
+            collection: cfg.collection
+        };
+
         window.graph = graph = new clique.Graph({
-            adapter: new tangelo.plugin.mongo.Mongo({
-                host: cfg.host || "localhost",
-                database: cfg.database,
-                collection: cfg.collection
-            })
+            adapter: new tangelo.plugin.mongo.Mongo(mongoStore)
         });
+
+        window.listSearch = listSearch = function (field, value) {
+            $.getJSON("assets/listsearch", _.extend({}, mongoStore, {
+                field: field,
+                value: value
+            })).then(function (results) {
+                var oids = _.pluck(_.pluck(results, "_id"), "$oid");
+                return $.when.apply($, _.map(oids, graph.adapter.findNodeByKey, graph.adapter));
+            }).then(function () {
+                return _.toArray(arguments);
+            });
+        };
 
         (function () {
             var request = null,
