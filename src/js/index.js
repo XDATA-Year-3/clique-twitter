@@ -398,6 +398,12 @@ $(function () {
                 }
             });
         }
+
+        // Do the same for a username in the query arguments.
+        if (_.has(args, "username")) {
+            listSearch("usernames", args.username)
+                .then(_.bind(graph.addNodes, graph));
+        }
     };
 
     $.getJSON("config.json")
