@@ -415,13 +415,12 @@ $(function () {
 
                             // Create connectivity links for new power node.
                             connectivityReqs = _.map(links, _.bind(function (link) {
-                                var data = link.getAllData(),
-                                    obj = {},
+                                var obj = {},
                                     source,
                                     target;
 
-                                _.each(data, function (pair) {
-                                    obj[pair[0]] = pair[1];
+                                _.each(link.getAllData(), function (value, key) {
+                                    obj[key] = value;
                                 });
 
                                 source = _.contains(nodes, link.source()) ? key : link.source();
