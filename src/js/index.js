@@ -289,15 +289,6 @@ $(function () {
                     }
                 },
                 {
-                    label: "Delete",
-                    color: "red",
-                    icon: "remove",
-                    repeat: true,
-                    callback: function (node) {
-                        return _.bind(clique.view.SelectionInfo.deleteNode, this)(node);
-                    }
-                },
-                {
                     label: "Expand",
                     color: "blue",
                     icon: "fullscreen",
