@@ -170,7 +170,7 @@ $(function () {
             model: graph,
             el: "#content",
             label: function (d) {
-                return d.data.usernames && d.data.usernames[0] || "(group node)";
+                return d.data.usernames && d.data.usernames[0] || "Group node";
             },
             fill: function (d) {
                 // Red for inactive users (e.g., mentioned by others only),
@@ -236,7 +236,7 @@ $(function () {
 
                     ul.select("li.nodelabel")
                         .text(function () {
-                            var label = d.data.usernames && d.data.usernames[0] || "(group node)";
+                            var label = d.data.usernames && d.data.usernames[0] || "Group node";
 
                             if (_.size(d.data.fullnames) > 0) {
                                 label += " (" + d.data.fullnames[0] + ")";
@@ -247,7 +247,9 @@ $(function () {
 
                     ul.select("li.activity")
                         .text(function () {
-                            if (!d.data.active) {
+                            if (d.data.grouped) {
+                                return "(This node represents a group of users.)";
+                            } else if (!d.data.active) {
                                 return "(This user has sent no messages and was only mentioned by someone else.)";
                             } else if (d.data.geolocated) {
                                 return "(This user has sent at least one geolocated message.)";
