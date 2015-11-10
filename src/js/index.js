@@ -15,6 +15,7 @@ $(function () {
             info,
             linkInfo,
             colormap,
+            ungroup,
             linkColormap;
 
         cfg = _cfg;
@@ -39,6 +40,63 @@ $(function () {
             }).then(function () {
                 return _.toArray(arguments);
             });
+        };
+
+        ungroup = function (node) {
+            var fromLinks,
+                toLinks,
+                restoredNodes;
+
+            // Get all links involving the group node.
+            fromLinks = this.graph.adapter.findLinks({
+                source: node.key()
+            });
+
+            toLinks = this.graph.adapter.findLinks({
+                target: node.key()
+            });
+
+            $.when(fromLinks, toLinks).then(_.bind(function (from, to) {
+                var inclusion,
+                    reqs;
+
+                // Find the "inclusion" links originating from the
+                // group node.
+                inclusion = _.filter(from, function (link) {
+                    return link.getData("grouping");
+                });
+
+                // Store the node keys associated to these links.
+                restoredNodes = _.invoke(inclusion, "target");
+
+                // Delete all the links.
+                reqs = _.map(from.concat(to), _.bind(this.graph.adapter.destroyLink, this.graph.adapter));
+
+                return $.apply($, reqs);
+            }, this)).then(_.bind(function () {
+                // Remove the node from the graph.
+                this.graph.removeNode(node);
+
+                // Delete the node itself.
+                return this.graph.adapter.destroyNode(node);
+            }, this)).then(_.bind(function () {
+                var reqs;
+
+                // Get mutators for the restored nodes.
+                reqs = _.map(restoredNodes, this.graph.adapter.findNodeByKey, this.graph.adapter);
+
+                return $.when.apply($, reqs);
+            }, this)).then(_.bind(function () {
+                var nodes = _.toArray(arguments);
+
+                // Clear the deleted flag from the nodes.
+                _.each(nodes, function (node) {
+                    node.clearData("deleted");
+                }, this);
+
+                // Add the nodes to the graph.
+                this.graph.addNodes(nodes);
+            }, this));
         };
 
         (function () {
@@ -112,13 +170,14 @@ $(function () {
             model: graph,
             el: "#content",
             label: function (d) {
-                return d.data.usernames[0];
+                return d.data.usernames && d.data.usernames[0] || "(group node)";
             },
             fill: function (d) {
                 // Red for inactive users (e.g., mentioned by others only),
-                // purple for active users with non-geolocated tweets, and blue
-                // for active users with geolocated tweets.
-                return !d.data.active ? "#ca0020" : (d.data.geolocated ? "#0571b0" : "#7b3294");
+                // purple for active users with non-geolocated tweets, blue for
+                // active users with geolocated tweets, and brown for group
+                // nodes.
+                return d.data.grouped ? "987654" : (!d.data.active ? "#ca0020" : (d.data.geolocated ? "#0571b0" : "#7b3294"));
             },
             nodeRadius: function (d, r) {
                 return d.data && d.data.grouped ? 2*r : r;
@@ -177,7 +236,7 @@ $(function () {
 
                     ul.select("li.nodelabel")
                         .text(function () {
-                            var label = d.data.usernames[0];
+                            var label = d.data.usernames && d.data.usernames[0] || "(group node)";
 
                             if (_.size(d.data.fullnames) > 0) {
                                 label += " (" + d.data.fullnames[0] + ")";
@@ -206,7 +265,11 @@ $(function () {
                     ul.select("a.context-collapse")
                         .on("click", _.bind(clique.view.SelectionInfo.collapseNode, info, node));
 
-                    if (cfg.intentService) {
+                    ul.select("a.context-ungroup")
+                        .style("display", d.data.grouped ? null : "none")
+                        .on("click", _.bind(ungroup, info, node));
+
+                    if (cfg.intentService && d.data.usernames) {
                         def = $.getJSON(cfg.intentService, {
                             username: d.data.usernames[0]
                         });
@@ -289,12 +352,113 @@ $(function () {
                     }
                 },
                 {
-                    label: "Delete",
-                    color: "red",
-                    icon: "remove",
-                    repeat: true,
-                    callback: function (node) {
-                        return _.bind(clique.view.SelectionInfo.deleteNode, this)(node);
+                    label: "Group",
+                    color: "blue",
+                    icon: "paperclip",
+                    callback: function (selection) {
+                        var nodes,
+                            links,
+                            powerNode,
+                            reqs;
+
+                        // Extract keys from node selection.
+                        nodes = _.map(selection, function (n) {
+                            return n.key();
+                        });
+                        // nodes = _.invoke(selection, "key");
+
+                        // Get all links going to or from nodes in the
+                        // selection.
+                        //
+                        // Start by issuing ajax calls to look for links with
+                        // each node as source and target.
+                        reqs = _.flatten(_.map(nodes, _.bind(function (n) {
+                            return [
+                                this.graph.adapter.findLinks({
+                                    source: n
+                                }),
+                                this.graph.adapter.findLinks({
+                                    target: n
+                                })
+                            ];
+                        }, this)));
+
+                        // Issue a jquery when call to wait for all the requests
+                        // to finish.
+                        $.when.apply($, reqs).then(_.bind(function () {
+                            // Collect the links from the function arguments,
+                            // omitting the "shadow" halves of bidirectional
+                            // links.
+                            links = _.filter(Array.prototype.concat.apply([], _.toArray(arguments)), function (l) {
+                                return !(l.getData("bidir") && l.getData("reference"));
+                            });
+
+                            // Create a new node that will serve as the power
+                            // node.
+                            return this.graph.adapter.createNode({
+                                grouped: true
+                            });
+                        }, this)).then(_.bind(function (_powerNode) {
+                            var inclusionReqs,
+                                connectivityReqs,
+                                reqs,
+                                key;
+
+                            powerNode = _powerNode;
+                            key = powerNode.key();
+
+                            // Create inclusion links for new power node.
+                            inclusionReqs = _.map(nodes, _.bind(function (n) {
+                                return this.graph.adapter.createLink(key, n, {
+                                    grouping: true
+                                });
+                            }, this));
+
+                            // Create connectivity links for new power node.
+                            connectivityReqs = _.map(links, _.bind(function (link) {
+                                var obj = {},
+                                    source,
+                                    target;
+
+                                _.each(link.getAllData(), function (value, key) {
+                                    obj[key] = value;
+                                });
+
+                                source = _.contains(nodes, link.source()) ? key : link.source();
+                                target = _.contains(nodes, link.target()) ? key : link.target();
+
+                                if (source !== key || target !== key) {
+                                    return this.graph.adapter.createLink(source, target, obj);
+                                }
+                            }, this));
+
+                            reqs = inclusionReqs.concat(_.compact(connectivityReqs));
+
+                            return $.when.apply($, reqs);
+                        }, this)).then(_.bind(function () {
+                            var newLinks = _.toArray(arguments);
+
+                            // Fill in any necessary "shadow" halves of
+                            // bidirectional links.
+                            return _.map(newLinks, _.bind(function (link) {
+                                var reqs = [];
+
+                                if (link.getData("bidir")) {
+                                    reqs.push(this.graph.adapter.createLink(link.target(), link.source(), {
+                                        bidir: true,
+                                        reference: link.key()
+                                    }));
+                                }
+
+                                return reqs;
+                            }, this));
+                        }, this)).then(_.bind(function () {
+                            // Delete the original selection's nodes.
+                            _.each(selection, clique.view.SelectionInfo.deleteNode, this);
+                        }, this)).then(_.bind(function () {
+                            // Add the new node to the graph.
+                            this.graph.addNode(powerNode);
+                        }, this));
                     }
                 },
                 {
