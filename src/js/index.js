@@ -16,7 +16,8 @@ $(function () {
             linkInfo,
             colormap,
             ungroup,
-            linkColormap;
+            linkColormap,
+            expandNode;
 
         cfg = _cfg;
 
@@ -195,6 +196,14 @@ $(function () {
             rootColor: "gold"
         });
 
+        expandNode = function (node) {
+            graph.adapter.neighborhood(node, 1, 5).then(function (nbd) {
+                _.each(nbd.nodes, function (n) {
+                    graph.addNode(n, nbd.links);
+                });
+            });
+        };
+
         view.on("render", function () {
             var $cm,
                 getMenuPosition;
@@ -262,13 +271,7 @@ $(function () {
                         .on("click", _.bind(clique.view.SelectionInfo.hideNode, info, node));
 
                     ul.select("a.context-expand")
-                        .on("click", function () {
-                            graph.adapter.neighborhood(node, 1, 5).then(function (nbd) {
-                                _.each(nbd.nodes, function (n) {
-                                    graph.addNode(n, nbd.links);
-                                });
-                            });
-                        });
+                        .on("click", _.partial(expandNode, node));
 
                     ul.select("a.context-collapse")
                         .on("click", _.bind(clique.view.SelectionInfo.collapseNode, info, node));
@@ -474,13 +477,7 @@ $(function () {
                     color: "blue",
                     icon: "fullscreen",
                     repeat: true,
-                    callback: function (node) {
-                        graph.adapter.neighborhood(node, 1, 5).then(function (nbd) {
-                            _.each(nbd.nodes, function (n) {
-                                graph.addNode(n, nbd.links);
-                            });
-                        });
-                    }
+                    callback: expandNode
                 },
                 {
                     label: "Collapse",
