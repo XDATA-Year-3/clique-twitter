@@ -262,7 +262,13 @@ $(function () {
                         .on("click", _.bind(clique.view.SelectionInfo.hideNode, info, node));
 
                     ul.select("a.context-expand")
-                        .on("click", _.bind(clique.view.SelectionInfo.expandNode, info, node));
+                        .on("click", function () {
+                            graph.adapter.neighborhood(node, 1, 5).then(function (nbd) {
+                                _.each(nbd.nodes, function (n) {
+                                    graph.addNode(n, nbd.links);
+                                });
+                            });
+                        });
 
                     ul.select("a.context-collapse")
                         .on("click", _.bind(clique.view.SelectionInfo.collapseNode, info, node));
@@ -469,7 +475,11 @@ $(function () {
                     icon: "fullscreen",
                     repeat: true,
                     callback: function (node) {
-                        _.bind(clique.view.SelectionInfo.expandNode, this)(node);
+                        graph.adapter.neighborhood(node, 1, 5).then(function (nbd) {
+                            _.each(nbd.nodes, function (n) {
+                                graph.addNode(n, nbd.links);
+                            });
+                        });
                     }
                 },
                 {
