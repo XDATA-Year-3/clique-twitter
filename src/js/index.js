@@ -568,14 +568,19 @@ $(function () {
             }).then(function (node) {
                 if (node) {
                     graph.addNode(node);
+                    expandNode(node);
                 }
             });
         }
 
         // Do the same for a username in the query arguments.
         if (_.has(args, "username")) {
-            listSearch("usernames", args.username)
-                .then(_.bind(graph.addNodes, graph));
+            listSearch("usernames", args.username).then(function (nodes) {
+                if (_.size(nodes) > 0) {
+                    graph.addNode(nodes[0]);
+                    expandNode(nodes[0]);
+                }
+            });
         }
     };
 
