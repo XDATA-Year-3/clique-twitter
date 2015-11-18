@@ -281,8 +281,15 @@ $(function () {
                         .on("click", _.bind(ungroup, info, node));
 
                     if (cfg.intentService && d.data.usernames) {
-                        def = $.getJSON(cfg.intentService, {
-                            username: d.data.usernames[0]
+                        def = $.ajax({
+                            url: cfg.intentService,
+                            xhrFields: {
+                                withCredentials: true
+                            },
+                            dataType: "json",
+                            data: {
+                                username: d.data.usernames[0]
+                            }
                         });
                     } else {
                         def = $.when({});
